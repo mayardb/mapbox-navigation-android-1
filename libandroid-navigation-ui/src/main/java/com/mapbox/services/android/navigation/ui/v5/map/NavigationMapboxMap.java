@@ -92,6 +92,7 @@ public class NavigationMapboxMap {
   public void addProgressChangeListener(MapboxNavigation navigation) {
     mapRoute.addProgressChangeListener(navigation);
     mapCamera.addProgressChangeListener(navigation);
+    mapWayname.addProgressChangeListener(navigation);
   }
 
   public void drawRoute(@NonNull DirectionsRoute route) {

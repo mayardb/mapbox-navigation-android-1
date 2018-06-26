@@ -2,12 +2,16 @@ package com.mapbox.services.android.navigation.ui.v5.map;
 
 import android.graphics.Bitmap;
 import android.graphics.PointF;
+import android.location.Location;
 
 import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.style.layers.Layer;
 import com.mapbox.mapboxsdk.style.layers.Property;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
+import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
@@ -18,12 +22,13 @@ import static com.mapbox.services.android.navigation.v5.navigation.NavigationCon
 class MapWayname {
 
   private static final String NAME_PROPERTY = "name";
-  private static final int FIRST_ROAD_FEATURE = 0;
-
   private WaynameLayoutProvider layoutProvider;
   private WaynameLayerInteractor layerInteractor;
   private WaynameFeatureFinder featureInteractor;
   private MapPaddingAdjustor paddingAdjustor;
+  private List<Point> currentStepPoints = new ArrayList<>();
+  private Location currentLocation = null;
+  private final MapWaynameProgressChangeListener progressChangeListener = new MapWaynameProgressChangeListener(this);
   private boolean isAutoQueryEnabled;
   private boolean isVisible;
   private String wayname = "";
@@ -65,6 +70,15 @@ class MapWayname {
     adjustWaynameVisibility(isVisible, waynameLayer);
   }
 
+  void updateProgress(Location currentLocation, List<Point> currentStepPoints) {
+    if (!this.currentStepPoints.equals(currentStepPoints)) {
+      this.currentStepPoints = currentStepPoints;
+    }
+    if (this.currentLocation == null || !this.currentLocation.equals(currentLocation)) {
+      this.currentLocation = currentLocation;
+    }
+  }
+
   void updateWaynameQueryMap(boolean isEnabled) {
     isAutoQueryEnabled = isEnabled;
   }
@@ -73,15 +87,20 @@ class MapWayname {
     return isVisible;
   }
 
+  void addProgressChangeListener(MapboxNavigation navigation) {
+    navigation.addProgressChangeListener(progressChangeListener);
+  }
+
   private List<Feature> findRoadLabelFeatures(PointF point) {
     String[] layerIds = {STREETS_LAYER_ID};
     return featureInteractor.queryRenderedFeatures(point, layerIds);
   }
 
-  private void updateLayerWithRoadLabelFeatures(List<Feature> roads, SymbolLayer waynameLayer) {
-    boolean isValidFeatureList = !roads.isEmpty();
+  private void updateLayerWithRoadLabelFeatures(List<Feature> roadFeatures, SymbolLayer waynameLayer) {
+    boolean isValidFeatureList = !roadFeatures.isEmpty();
     if (isValidFeatureList) {
-      Feature roadFeature = roads.get(FIRST_ROAD_FEATURE);
+      WaynameFeatureFilter featureFilter = new WaynameFeatureFilter(roadFeatures, currentLocation, currentStepPoints);
+      Feature roadFeature = featureFilter.filter();
       updateWaynameLayerWithNameProperty(waynameLayer, roadFeature);
     } else {
       updateWaynameVisibility(false, waynameLayer);
