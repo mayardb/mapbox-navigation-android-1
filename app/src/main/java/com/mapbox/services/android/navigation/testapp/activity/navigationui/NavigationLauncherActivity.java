@@ -17,6 +17,7 @@ import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.google.gson.GsonBuilder;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -44,18 +45,27 @@ import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.ui.v5.route.OnRouteSelectionChangeListener;
+import com.mapbox.services.android.navigation.v5.location.replay.ReplayLocationDispatcher;
+import com.mapbox.services.android.navigation.v5.location.replay.ReplayLocationMapper;
+import com.mapbox.services.android.navigation.v5.location.replay.ReplayRouteDto;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 import com.mapbox.services.android.navigation.v5.utils.LocaleUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Scanner;
+import java.util.TimeZone;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import retrofit2.Call;
 import retrofit2.Response;
+import timber.log.Timber;
 
 import static com.mapbox.android.core.location.LocationEnginePriority.HIGH_ACCURACY;
 
@@ -87,6 +97,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
   private LocaleUtils localeUtils;
 
   private boolean locationFound;
+  private ReplayLocationDispatcher replayLocationDispatcher;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -96,6 +107,32 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     mapView.onCreate(savedInstanceState);
     mapView.getMapAsync(this);
     localeUtils = new LocaleUtils();
+    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(obtainJson("reroute.json"),
+      ReplayRouteDto.class);
+    ReplayLocationMapper mapper = new ReplayLocationMapper(routeFromJson.getLocations());
+    replayLocationDispatcher = new ReplayLocationDispatcher(mapper.toLocations());
+    replayLocationDispatcher.addReplayLocationListener(location -> {
+      String dateFormatPattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+      SimpleDateFormat dateFormat = new SimpleDateFormat(dateFormatPattern);
+      dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+      String parsedTime = dateFormat.format(location.getTime());
+      Timber.d("parsedTime %s", parsedTime);
+    });
+  }
+
+  private String obtainJson(String fileName) {
+    InputStream file = null;
+    try {
+      file = getAssets().open(fileName);
+    } catch (IOException exception) {
+      exception.printStackTrace();
+    }
+    return convertStreamToString(file);
+  }
+
+  private String convertStreamToString(InputStream is) {
+    Scanner scanner = new Scanner(is).useDelimiter("\\A");
+    return scanner.hasNext() ? scanner.next() : "";
   }
 
   @Override
@@ -110,6 +147,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     switch (item.getItemId()) {
       case R.id.settings:
         showSettings();
+        replayLocationDispatcher.run();
         return true;
       default:
         return super.onOptionsItemSelected(item);
@@ -187,6 +225,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
       locationEngine.removeLocationUpdates();
       locationEngine.deactivate();
     }
+    replayLocationDispatcher.stop();
   }
 
   @Override
@@ -211,6 +250,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
   @Override
   public void onMapLongClick(@NonNull LatLng point) {
+    replayLocationDispatcher.pause();
     destination = Point.fromLngLat(point.getLongitude(), point.getLatitude());
     launchRouteBtn.setEnabled(false);
     loading.setVisibility(View.VISIBLE);
