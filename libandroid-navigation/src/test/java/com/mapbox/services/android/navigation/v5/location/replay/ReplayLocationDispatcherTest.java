@@ -108,7 +108,8 @@ public class ReplayLocationDispatcherTest {
   @Test
   public void checksClearLocationsWhenStop() {
     List<Location> theLocations = mock(List.class);
-    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(theLocations);
+    Handler aHandler = mock(Handler.class);
+    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(theLocations, aHandler);
 
     theReplayLocationDispatcher.stop();
 
@@ -129,7 +130,8 @@ public class ReplayLocationDispatcherTest {
   @Test
   public void checksLastLocationDispatchedWhenStop() {
     List<Location> anyLocations = mock(List.class);
-    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(anyLocations);
+    Handler aHandler = mock(Handler.class);
+    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(anyLocations, aHandler);
     ReplayLocationListener aReplayLocationListener = mock(ReplayLocationListener.class);
     theReplayLocationDispatcher.addReplayLocationListener(aReplayLocationListener);
 
@@ -153,7 +155,8 @@ public class ReplayLocationDispatcherTest {
   @Test(expected = IllegalArgumentException.class)
   public void checksNonNullLocationListRequiredWhenUpdate() {
     List<Location> anyLocations = mock(List.class);
-    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(anyLocations);
+    Handler aHandler = mock(Handler.class);
+    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(anyLocations, aHandler);
     List<Location> nullLocations = null;
 
     theReplayLocationDispatcher.update(nullLocations);
@@ -162,10 +165,23 @@ public class ReplayLocationDispatcherTest {
   @Test(expected = IllegalArgumentException.class)
   public void checksNonEmptyLocationListRequiredWhenUpdate() {
     List<Location> anyLocations = mock(List.class);
-    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(anyLocations);
+    Handler aHandler = mock(Handler.class);
+    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(anyLocations, aHandler);
     List<Location> empty = Collections.emptyList();
 
     theReplayLocationDispatcher.update(empty);
+  }
+
+  @Test
+  public void checksAddLocationsWhenAdd() {
+    List<Location> anyLocations = mock(List.class);
+    Handler aHandler = mock(Handler.class);
+    ReplayLocationDispatcher theReplayLocationDispatcher = new ReplayLocationDispatcher(anyLocations, aHandler);
+    List<Location> locationsToReplay = mock(List.class);
+
+    theReplayLocationDispatcher.add(locationsToReplay);
+
+    verify(anyLocations, times(1)).addAll(eq(locationsToReplay));
   }
 
   private Location createALocation() {

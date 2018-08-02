@@ -7,19 +7,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class ReplayLocationMapper {
+class ReplayJsonRouteLocationMapper {
 
   private static final String NON_NULL_AND_NON_EMPTY_REPLAY_LOCATION_LIST_REQUIRED = "Non-null and non-empty replay "
     + "location list required.";
   private static final String REPLAY = "ReplayLocation";
   private final List<ReplayLocationDto> replayLocations;
 
-  public ReplayLocationMapper(List<ReplayLocationDto> replayLocations) {
+  ReplayJsonRouteLocationMapper(List<ReplayLocationDto> replayLocations) {
     checkValidInput(replayLocations);
     this.replayLocations = replayLocations;
   }
 
-  public List<Location> toLocations() {
+  List<Location> toLocations() {
     List<Location> mappedLocations = mapReplayLocations();
     return mappedLocations;
   }

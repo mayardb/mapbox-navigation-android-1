@@ -15,7 +15,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(RobolectricTestRunner.class)
-public class ReplayLocationMapperTest {
+public class ReplayJsonRouteLocationMapperTest {
 
   private static final double DELTA = 1e-15;
 
@@ -23,14 +23,14 @@ public class ReplayLocationMapperTest {
   public void checksNonNullLocationListRequired() {
     List<ReplayLocationDto> nullLocations = null;
 
-    new ReplayLocationMapper(nullLocations);
+    new ReplayJsonRouteLocationMapper(nullLocations);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void checksNonEmptyLocationListRequired() {
     List<ReplayLocationDto> empty = Collections.emptyList();
 
-    new ReplayLocationMapper(empty);
+    new ReplayJsonRouteLocationMapper(empty);
   }
 
   @Test
@@ -38,9 +38,9 @@ public class ReplayLocationMapperTest {
     List<ReplayLocationDto> anyReplayLocations = new ArrayList<>(1);
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals("ReplayLocation", theLocation.getProvider());
@@ -52,9 +52,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setLongitude(2.0);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals(2.0, theLocation.getLongitude(), DELTA);
@@ -66,9 +66,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setHorizontalAccuracyMeters(3.0f);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals(3.0f, theLocation.getAccuracy(), DELTA);
@@ -80,9 +80,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setBearing(180.0);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals(180f, theLocation.getBearing(), DELTA);
@@ -95,9 +95,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setVerticalAccuracyMeters(8.0f);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals(8.0, theLocation.getVerticalAccuracyMeters(), DELTA);
@@ -110,9 +110,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setVerticalAccuracyMeters(8.0f);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     theLocation.getVerticalAccuracyMeters();
@@ -124,9 +124,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setSpeed(65.0);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals(65.0f, theLocation.getSpeed(), DELTA);
@@ -138,9 +138,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setLatitude(7.0);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals(7.0, theLocation.getLatitude(), DELTA);
@@ -152,9 +152,9 @@ public class ReplayLocationMapperTest {
     ReplayLocationDto aReplayLocation = new ReplayLocationDto();
     aReplayLocation.setAltitude(9.0);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     assertEquals(9.0, theLocation.getAltitude(), DELTA);
@@ -167,9 +167,9 @@ public class ReplayLocationMapperTest {
     Date aDate = new Date();
     aReplayLocation.setDate(aDate);
     anyReplayLocations.add(aReplayLocation);
-    ReplayLocationMapper theReplayLocationMapper = new ReplayLocationMapper(anyReplayLocations);
+    ReplayJsonRouteLocationMapper theReplayJsonRouteLocationMapper = new ReplayJsonRouteLocationMapper(anyReplayLocations);
 
-    List<Location> locations = theReplayLocationMapper.toLocations();
+    List<Location> locations = theReplayJsonRouteLocationMapper.toLocations();
 
     Location theLocation = locations.get(0);
     long timeFromDate = aDate.getTime();

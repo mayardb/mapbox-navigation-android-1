@@ -19,7 +19,7 @@ public class ReplayRouteParserTest {
   public void checksLongitudeParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     assertEquals(11.579233823791801, firstLocation.getLongitude(), DELTA);
@@ -29,7 +29,7 @@ public class ReplayRouteParserTest {
   public void checksHorizontalAccuracyParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     assertEquals(40, firstLocation.getHorizontalAccuracyMeters(), DELTA);
@@ -39,7 +39,7 @@ public class ReplayRouteParserTest {
   public void checksBearingParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     assertEquals(277.0355517432898, firstLocation.getBearing(), DELTA);
@@ -49,7 +49,7 @@ public class ReplayRouteParserTest {
   public void checksVerticalAccuracyParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     assertEquals(10, firstLocation.getVerticalAccuracyMeters(), DELTA);
@@ -59,7 +59,7 @@ public class ReplayRouteParserTest {
   public void checksSpeedParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     assertEquals(14.704089336389941, firstLocation.getSpeed(), DELTA);
@@ -69,7 +69,7 @@ public class ReplayRouteParserTest {
   public void checksLatitudeParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     assertEquals(48.1776966801359, firstLocation.getLatitude(), DELTA);
@@ -79,7 +79,7 @@ public class ReplayRouteParserTest {
   public void checksAltitudeParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     assertEquals(0, firstLocation.getAltitude(), DELTA);
@@ -89,7 +89,7 @@ public class ReplayRouteParserTest {
   public void checksTimestampParsing() {
     String json = obtainJson("reroute.json");
 
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
 
     ReplayLocationDto firstLocation = routeFromJson.getLocations().get(0);
     String dateFormatPattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
@@ -101,7 +101,7 @@ public class ReplayRouteParserTest {
   @Test
   public void checksRouteParsing() {
     String json = obtainJson("reroute.json");
-    ReplayRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayRouteDto.class);
+    ReplayJsonRouteDto routeFromJson = new GsonBuilder().create().fromJson(json, ReplayJsonRouteDto.class);
     assertEquals("https://api.mapbox.com/directions/v5/mapbox/driving-traffic/11.579233823791801,48.1776966801359;" +
       "11.573521553454881,48.17812728496367.json?access_token=pk" +
       ".eyJ1IjoibWFwYm94LW5hdmlnYXRpb24iLCJhIjoiY2plZzkxZnl4MW9tZDMzb2R2ZXlkeHlhbCJ9.L1c9Wo-gk6d3cR3oi1n9SQ&steps" +

@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class ReplayLocationDispatcher implements Runnable {
@@ -15,19 +16,23 @@ public class ReplayLocationDispatcher implements Runnable {
   private List<Location> locationsToReplay;
   private Location current;
   private Handler handler;
-  private final CopyOnWriteArraySet<ReplayLocationListener> replayLocationListeners;
+  private CopyOnWriteArraySet<ReplayLocationListener> replayLocationListeners;
   private boolean isLastLocationDispatched;
 
-  public ReplayLocationDispatcher(@NonNull List<Location> locationsToReplay) {
+  ReplayLocationDispatcher(@NonNull List<Location> locationsToReplay) {
     checkValidInput(locationsToReplay);
-    initialize(locationsToReplay);
-    this.handler = new Handler();
+    this.locationsToReplay = new CopyOnWriteArrayList<>(locationsToReplay);
+    initialize();
     this.replayLocationListeners = new CopyOnWriteArraySet<>();
+    this.handler = new Handler();
   }
 
   // For testing only
   ReplayLocationDispatcher(List<Location> locationsToReplay, Handler handler) {
-    this(locationsToReplay);
+    checkValidInput(locationsToReplay);
+    this.locationsToReplay = locationsToReplay;
+    initialize();
+    this.replayLocationListeners = new CopyOnWriteArraySet<>();
     this.handler = handler;
   }
 
@@ -39,26 +44,31 @@ public class ReplayLocationDispatcher implements Runnable {
     }
   }
 
-  public void stop() {
+  void stop() {
     clearLocations();
     stopDispatching();
     lastLocationDispatched();
   }
 
-  public void pause() {
+  void pause() {
     stopDispatching();
   }
 
-  public void update(@NonNull List<Location> locationsToReplay) {
+  void update(@NonNull List<Location> locationsToReplay) {
     checkValidInput(locationsToReplay);
-    initialize(locationsToReplay);
+    this.locationsToReplay = new CopyOnWriteArrayList<>(locationsToReplay);
+    initialize();
   }
 
-  public void addReplayLocationListener(ReplayLocationListener listener) {
+  void add(@NonNull List<Location> toReplay) {
+    addLocations(toReplay);
+  }
+
+  void addReplayLocationListener(ReplayLocationListener listener) {
     replayLocationListeners.add(listener);
   }
 
-  public void removeReplayLocationListener(ReplayLocationListener listener) {
+  void removeReplayLocationListener(ReplayLocationListener listener) {
     replayLocationListeners.remove(listener);
   }
 
@@ -69,10 +79,13 @@ public class ReplayLocationDispatcher implements Runnable {
     }
   }
 
-  private void initialize(List<Location> locations) {
-    locationsToReplay = locations;
+  private void initialize() {
     current = locationsToReplay.remove(HEAD);
     isLastLocationDispatched = false;
+  }
+
+  private void addLocations(List<Location> toReplay) {
+    locationsToReplay.addAll(toReplay);
   }
 
   private void dispatchLocation(Location location) {
