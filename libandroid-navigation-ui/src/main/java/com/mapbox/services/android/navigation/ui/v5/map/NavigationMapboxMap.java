@@ -70,7 +70,7 @@ public class NavigationMapboxMap {
     this.mapboxMap = mapboxMap;
     initializeLocationLayer(mapView, mapboxMap);
     initializeMapPaddingAdjustor(mapView, mapboxMap);
-    initializeWayname(mapView, mapboxMap, mapPaddingAdjustor);
+    initializeWayname(mapView, mapboxMap, mapPaddingAdjustor, mapboxMap);
     initializeRoute(mapView, mapboxMap);
     initializeCamera(mapboxMap);
   }
@@ -189,13 +189,13 @@ public class NavigationMapboxMap {
     mapCamera = new NavigationCamera(map);
   }
 
-  private void initializeWayname(MapView mapView, MapboxMap mapboxMap, MapPaddingAdjustor paddingAdjustor) {
+  private void initializeWayname(MapView mapView, MapboxMap mapboxMap, MapPaddingAdjustor paddingAdjustor, MapboxMap map) {
     initializeStreetsSource(mapboxMap);
     WaynameLayoutProvider layoutProvider = new WaynameLayoutProvider(mapView.getContext());
     WaynameLayerInteractor layerInteractor = new WaynameLayerInteractor(mapboxMap);
     WaynameFeatureFinder featureInteractor = new WaynameFeatureFinder(mapboxMap);
     initializeWaynameLayer(layerInteractor);
-    mapWayname = new MapWayname(layoutProvider, layerInteractor, featureInteractor, paddingAdjustor);
+    mapWayname = new MapWayname(layoutProvider, layerInteractor, featureInteractor, paddingAdjustor, map);
   }
 
   private void initializeWaynameLayer(WaynameLayerInteractor layerInteractor) {

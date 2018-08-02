@@ -6,6 +6,7 @@ import android.location.Location;
 
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.Point;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.style.layers.Layer;
 import com.mapbox.mapboxsdk.style.layers.Property;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
@@ -33,12 +34,15 @@ class MapWayname {
   private boolean isVisible;
   private String wayname = "";
 
+  private MapboxMap mapboxMap;
+
   MapWayname(WaynameLayoutProvider layoutProvider, WaynameLayerInteractor layerInteractor,
-             WaynameFeatureFinder featureInteractor, MapPaddingAdjustor paddingAdjustor) {
+             WaynameFeatureFinder featureInteractor, MapPaddingAdjustor paddingAdjustor, MapboxMap map) {
     this.layoutProvider = layoutProvider;
     this.layerInteractor = layerInteractor;
     this.featureInteractor = featureInteractor;
     this.paddingAdjustor = paddingAdjustor;
+    mapboxMap = map;
   }
 
   void updateWaynameWithPoint(PointF point, SymbolLayer waynameLayer) {
@@ -99,7 +103,7 @@ class MapWayname {
   private void updateLayerWithRoadLabelFeatures(List<Feature> roadFeatures, SymbolLayer waynameLayer) {
     boolean isValidFeatureList = !roadFeatures.isEmpty();
     if (isValidFeatureList) {
-      WaynameFeatureFilter featureFilter = new WaynameFeatureFilter(roadFeatures, currentLocation, currentStepPoints);
+      WaynameFeatureFilter featureFilter = new WaynameFeatureFilter(roadFeatures, currentLocation, currentStepPoints, mapboxMap);
       Feature roadFeature = featureFilter.filter();
       updateWaynameLayerWithNameProperty(waynameLayer, roadFeature);
     } else {

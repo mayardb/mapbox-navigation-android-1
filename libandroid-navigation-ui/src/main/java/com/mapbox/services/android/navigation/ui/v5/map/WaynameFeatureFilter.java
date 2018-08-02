@@ -9,6 +9,10 @@ import com.mapbox.geojson.Geometry;
 import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.MultiLineString;
 import com.mapbox.geojson.Point;
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.turf.TurfMeasurement;
 
 import java.util.ArrayList;
@@ -18,6 +22,7 @@ import java.util.List;
 import timber.log.Timber;
 
 import static com.mapbox.turf.TurfConstants.UNIT_METRES;
+import static com.mapbox.turf.TurfMeasurement.along;
 import static com.mapbox.turf.TurfMisc.lineSlice;
 import static com.mapbox.turf.TurfMisc.lineSliceAlong;
 
@@ -32,10 +37,14 @@ class WaynameFeatureFilter {
   private final Point currentPoint;
   private final LineString currentStepLineString;
 
-  WaynameFeatureFilter(List<Feature> queriedFeatures, Location currentLocation, List<Point> currentStepPoints) {
+  private final MapboxMap map;
+  private List<Marker> markers = new ArrayList<>();
+
+  WaynameFeatureFilter(List<Feature> queriedFeatures, Location currentLocation, List<Point> currentStepPoints, MapboxMap map) {
     this.queriedFeatures = queriedFeatures;
     currentPoint = Point.fromLngLat(currentLocation.getLongitude(), currentLocation.getLatitude());
     currentStepLineString = LineString.fromLngLats(currentStepPoints);
+    this.map = map;
   }
 
   @NonNull
@@ -48,49 +57,99 @@ class WaynameFeatureFilter {
     if (queriedFeatures.size() == ONE_FEATURE) {
       return filteredFeature;
     }
-    Timber.d("NAV_DEBUG ***************************************");
+    Timber.d("NAV_DEBUG *************************************** ***************************************");
     logNames(queriedFeatures);
     for (Feature feature : queriedFeatures) {
-      List<LineString> featureLineStrings = new ArrayList<>();
+      Timber.d("NAV_DEBUG *************************************** Filtering %s", feature.getStringProperty("name"));
       Geometry featureGeometry = feature.geometry();
       if (featureGeometry == null) {
         continue;
       }
       // Convert feature geometry to LineStrings
+      List<LineString> featureLineStrings = new ArrayList<>();
       if (featureGeometry instanceof LineString) {
         featureLineStrings.add((LineString) featureGeometry);
       } else if (featureGeometry instanceof MultiLineString) {
-        featureLineStrings.addAll(((MultiLineString) featureGeometry).lineStrings());
+        featureLineStrings = ((MultiLineString) featureGeometry).lineStrings();
       }
 
       double smallestUserDistanceToFeature = Double.POSITIVE_INFINITY;
       for (LineString featureLineString : featureLineStrings) {
-        // 10 meters ahead of current location on the feature LineString
-        Point pointAheadFeature = findPointFromCurrentPoint(currentPoint, TEN_METERS, featureLineString);
+
+        // Point ahead on the feature
+        List<Point> lineStringCoordinates = featureLineString.coordinates();
+        int coordinateSize = lineStringCoordinates.size();
+        if (coordinateSize < TWO_POINTS) {
+          return null;
+        }
+        Point lastLinePoint = lineStringCoordinates.get(coordinateSize - 1);
+        if (currentPoint == null || currentPoint.equals(lastLinePoint)) {
+          return null;
+        }
+        LineString sliceFromCurrentPoint = lineSlice(currentPoint, lastLinePoint, featureLineString);
+        Point pointAheadFeature = along(sliceFromCurrentPoint, 10, UNIT_METRES);
         Timber.d("NAV_DEBUG pointAheadFeature: %s", pointAheadFeature);
-        // 10 meters behind the current location on the feature LineString
-        LineString reversedFeatureLineString = reverseFeatureLineString(featureLineString);
-        Point pointBehindFeature = findPointFromCurrentPoint(currentPoint, TEN_METERS, reversedFeatureLineString);
+        addMarker(pointAheadFeature);
+
+        // Point behind on the feature
+        LineString reversedFeatureLineString = reverseFeatureLineStringCoordinates(featureLineString);
+        List<Point> reversedFeatureLineStringCoordinates = reversedFeatureLineString.coordinates();
+        int reversedCoordinateSize = reversedFeatureLineStringCoordinates.size();
+        if (reversedCoordinateSize < TWO_POINTS) {
+          return null;
+        }
+        Point lastReversedLinePoint = reversedFeatureLineStringCoordinates.get(0);
+        if (currentPoint.equals(lastReversedLinePoint)) {
+          return null;
+        }
+        LineString reverseSliceFromCurrentPoint = lineSlice(currentPoint, lastReversedLinePoint, reversedFeatureLineString);
+        Point pointBehindFeature = along(reverseSliceFromCurrentPoint, 10, UNIT_METRES);
         Timber.d("NAV_DEBUG pointBehindFeature: %s", pointBehindFeature);
-        // 10 meters ahead of the current location on the step LineString
-        Point pointAheadUser = findPointFromCurrentPoint(currentPoint, TEN_METERS, currentStepLineString);
-        Timber.d("NAV_DEBUG pointAheadUser: %s", pointAheadUser);
+        addMarker(pointBehindFeature);
 
-        double userDistanceToAheadFeature = calculateDistance(pointAheadUser, pointAheadFeature);
+        // Point ahead on the step
+        List<Point> currentStepCoordinates = currentStepLineString.coordinates();
+        int stepCoordinateSize = currentStepCoordinates.size();
+        if (stepCoordinateSize < TWO_POINTS) {
+          return null;
+        }
+        Point lastStepPoint = currentStepCoordinates.get(stepCoordinateSize - 1);
+        if (currentPoint.equals(lastStepPoint)) {
+          return null;
+        }
+        LineString stepSliceFromCurrentPoint = lineSlice(currentPoint, lastStepPoint, currentStepLineString);
+        Point pointAheadUserOnStep = along(stepSliceFromCurrentPoint, 10, UNIT_METRES);
+        Timber.d("NAV_DEBUG pointAheadUserOnStep: %s", pointAheadUserOnStep);
+        addMarker(pointAheadUserOnStep);
+
+        double userDistanceToAheadFeature = calculateDistance(pointAheadUserOnStep, pointAheadFeature);
         Timber.d("NAV_DEBUG userDistanceToAheadFeature: %s", userDistanceToAheadFeature);
-        double userDistanceToBehindFeature = calculateDistance(pointAheadUser, pointBehindFeature);
-        Timber.d("NAV_DEBUG userDistanceToBehindFeature: %s", userDistanceToBehindFeature);
-        double smallestDistanceToFeature = Math.min(userDistanceToAheadFeature, userDistanceToBehindFeature);
-        Timber.d("NAV_DEBUG smallestDistanceToFeature: %s", smallestDistanceToFeature);
 
-        if (smallestDistanceToFeature < smallestUserDistanceToFeature) {
-          logName(feature);
-          smallestUserDistanceToFeature = smallestDistanceToFeature;
+        double userDistanceToBehindFeature = calculateDistance(pointAheadUserOnStep, pointBehindFeature);
+        Timber.d("NAV_DEBUG userDistanceToBehindFeature: %s", userDistanceToBehindFeature);
+
+        double minDistanceToFeature = Math.min(userDistanceToAheadFeature, userDistanceToBehindFeature);
+        Timber.d("NAV_DEBUG minDistanceToFeature: %s", minDistanceToFeature);
+
+        if (minDistanceToFeature < smallestUserDistanceToFeature) {
+          smallestUserDistanceToFeature = minDistanceToFeature;
           filteredFeature = feature;
         }
+        clearMarkers();
       }
     }
+    logName(filteredFeature);
     return filteredFeature;
+  }
+
+  private void addMarker(Point point) {
+    markers.add(map.addMarker(new MarkerOptions().position(new LatLng(point.latitude(), point.longitude()))));
+  }
+
+  private void clearMarkers() {
+//    for (Marker marker : markers) {
+//      map.removeMarker(marker);
+//    }
   }
 
   private void logNames(List<Feature> queriedFeatures) {
@@ -108,25 +167,25 @@ class WaynameFeatureFilter {
     boolean hasValidNameProperty = feature.hasNonNullValueForProperty("name");
     if (hasValidNameProperty) {
       String name = feature.getStringProperty("name");
-      Timber.d("NAV_DEBUG filteredFeature found: %s", name);
+      Timber.d("NAV_DEBUG *************************************** filteredFeature found: %s", name);
     }
   }
 
-  private double calculateDistance(Point pointAheadUser, Point pointAheadFeature) {
-    if (pointAheadUser == null || pointAheadFeature == null) {
+  private double calculateDistance(Point lhs, Point rhs) {
+    if (lhs == null || rhs == null) {
       return Double.POSITIVE_INFINITY;
     }
-    return TurfMeasurement.distance(pointAheadUser, pointAheadFeature);
+    return TurfMeasurement.distance(lhs, rhs);
   }
 
   @Nullable
   Point findPointFromCurrentPoint(Point currentPoint, double metersFromCurrentPoint, LineString lineString) {
-    List<Point> lineStringPoints = lineString.coordinates();
-    int lineStringPointsSize = lineStringPoints.size();
-    if (lineStringPointsSize < TWO_POINTS) {
+    List<Point> lineStringCoordinates = lineString.coordinates();
+    int coordinateSize = lineStringCoordinates.size();
+    if (coordinateSize < TWO_POINTS) {
       return null;
     }
-    Point lastLinePoint = lineStringPoints.get(lineStringPointsSize - 1);
+    Point lastLinePoint = lineStringCoordinates.get(coordinateSize - 1);
     if (currentPoint == null || currentPoint.equals(lastLinePoint)) {
       return null;
     }
@@ -143,9 +202,9 @@ class WaynameFeatureFilter {
   }
 
   @NonNull
-  private LineString reverseFeatureLineString(LineString featureLineString) {
-    List<Point> reversedFeaturePoints = new ArrayList<>(featureLineString.coordinates());
-    Collections.reverse(featureLineString.coordinates());
-    return LineString.fromLngLats(reversedFeaturePoints);
+  private LineString reverseFeatureLineStringCoordinates(LineString featureLineString) {
+    List<Point> reversedFeatureCoordinates = new ArrayList<>(featureLineString.coordinates());
+    Collections.reverse(reversedFeatureCoordinates);
+    return LineString.fromLngLats(reversedFeatureCoordinates);
   }
 }
