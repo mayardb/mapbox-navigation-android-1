@@ -26,12 +26,15 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.services.android.navigation.ui.v5.instruction.ImageCoordinator;
 import com.mapbox.services.android.navigation.ui.v5.instruction.InstructionView;
 import com.mapbox.services.android.navigation.ui.v5.map.NavigationMapboxMap;
+import com.mapbox.services.android.navigation.ui.v5.map.NavigationMapboxMapInstanceState;
 import com.mapbox.services.android.navigation.ui.v5.summary.SummaryBottomSheet;
 import com.mapbox.services.android.navigation.v5.location.MockLocationEngine;
 import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationTimeFormat;
 import com.mapbox.services.android.navigation.v5.utils.LocaleUtils;
+
+import static com.mapbox.services.android.navigation.ui.v5.map.NavigationMapboxMap.MAP_INSTANCE_STATE_KEY;
 
 /**
  * View that creates the drop-in UI.
@@ -73,6 +76,7 @@ public class NavigationView extends CoordinatorLayout implements LifecycleObserv
   private NavigationMapboxMap navigationMap;
   private OnNavigationReadyCallback onNavigationReadyCallback;
   private MapboxMap.OnMoveListener onMoveListener;
+  private NavigationMapboxMapInstanceState mapInstanceState;
   private boolean isInitialized;
 
   public NavigationView(Context context) {
@@ -128,12 +132,13 @@ public class NavigationView extends CoordinatorLayout implements LifecycleObserv
    */
   public void onSaveInstanceState(Bundle outState) {
     int bottomSheetBehaviorState = summaryBehavior == null ? INVALID_STATE : summaryBehavior.getState();
-
     NavigationViewInstanceState navigationViewInstanceState = new NavigationViewInstanceState(bottomSheetBehaviorState,
       recenterBtn.getVisibility(), instructionView.isShowingInstructionList());
-    outState.putParcelable(getContext().getString(R.string.instance_state), navigationViewInstanceState);
+    String instanceKey = getContext().getString(R.string.navigation_view_instance_state);
+    outState.putParcelable(instanceKey, navigationViewInstanceState);
     outState.putBoolean(getContext().getString(R.string.navigation_running), navigationViewModel.isRunning());
     mapView.onSaveInstanceState(outState);
+    saveNavigationMapInstanceState(outState);
   }
 
   /**
@@ -144,12 +149,12 @@ public class NavigationView extends CoordinatorLayout implements LifecycleObserv
    * @param savedInstanceState to extract state variables
    */
   public void onRestoreInstanceState(Bundle savedInstanceState) {
-    NavigationViewInstanceState navigationViewInstanceState = savedInstanceState
-      .getParcelable(getContext().getString(R.string.instance_state));
-
+    String instanceKey = getContext().getString(R.string.navigation_view_instance_state);
+    NavigationViewInstanceState navigationViewInstanceState = savedInstanceState.getParcelable(instanceKey);
     recenterBtn.setVisibility(navigationViewInstanceState.getRecenterButtonVisibility());
     resetBottomSheetState(navigationViewInstanceState.getBottomSheetBehaviorState());
     updateInstructionListState(navigationViewInstanceState.isInstructionViewVisible());
+    mapInstanceState = savedInstanceState.getParcelable(MAP_INSTANCE_STATE_KEY);
   }
 
   /**
@@ -256,6 +261,9 @@ public class NavigationView extends CoordinatorLayout implements LifecycleObserv
 
   private void initializeNavigationMap(MapView mapView, MapboxMap map) {
     navigationMap = new NavigationMapboxMap(mapView, map);
+    if (mapInstanceState != null) {
+      navigationMap.restoreFrom(mapInstanceState);
+    }
   }
 
   @Override
@@ -452,12 +460,12 @@ public class NavigationView extends CoordinatorLayout implements LifecycleObserv
     }
   }
 
-  /**
-   * Sets the {@link BottomSheetBehavior} based on the last state stored
-   * in {@link Bundle} savedInstanceState.
-   *
-   * @param bottomSheetState retrieved from savedInstanceState
-   */
+  private void saveNavigationMapInstanceState(Bundle outState) {
+    if (navigationMap != null) {
+      navigationMap.onSaveInstanceState(outState);
+    }
+  }
+
   private void resetBottomSheetState(int bottomSheetState) {
     if (bottomSheetState > INVALID_STATE) {
       boolean isShowing = bottomSheetState == BottomSheetBehavior.STATE_EXPANDED;

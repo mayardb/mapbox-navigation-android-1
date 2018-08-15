@@ -1,10 +1,10 @@
 package com.mapbox.services.android.navigation.ui.v5.map;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.location.Location;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import com.mapbox.api.directions.v5.models.DirectionsRoute;
@@ -50,9 +50,10 @@ import static com.mapbox.services.android.navigation.v5.navigation.NavigationCon
 
 public class NavigationMapboxMap {
 
+  public static final String MAP_INSTANCE_STATE_KEY = "navgation_mapbox_map_instance_state";
   static final String STREETS_LAYER_ID = "streetsLayer";
-  private static final String STREETS_SOURCE_ID = "streetsSource";
   private static final String MAPBOX_STREETS_V7 = "mapbox://mapbox.mapbox-streets-v7";
+  private static final String STREETS_SOURCE_ID = "streetsSource";
   private static final String ROAD_LABEL = "road_label";
   private static final float DEFAULT_WIDTH = 20f;
   private static final int LAST_INDEX = 0;
@@ -92,6 +93,36 @@ public class NavigationMapboxMap {
   public void addProgressChangeListener(MapboxNavigation navigation) {
     mapRoute.addProgressChangeListener(navigation);
     mapCamera.addProgressChangeListener(navigation);
+  }
+
+  /**
+   * TODO
+   *
+   * @param outState to store state variables
+   */
+  public void onSaveInstanceState(Bundle outState) {
+    boolean isVisible = mapWayname.isVisible();
+    String waynameText = mapWayname.retrieveWayname();
+    boolean isCameraTracking = mapCamera.isTrackingEnabled();
+    NavigationMapboxMapInstanceState instanceState = new NavigationMapboxMapInstanceState(
+      isVisible, waynameText, isCameraTracking
+    );
+    outState.putParcelable(MAP_INSTANCE_STATE_KEY, instanceState);
+  }
+
+  /**
+   * TODO
+   *
+   * @param instanceState to extract state variables
+   */
+  public void restoreFrom(NavigationMapboxMapInstanceState instanceState) {
+    boolean isVisible = instanceState.isWaynameVisible();
+    updateWaynameVisibility(isVisible);
+    if (isVisible) {
+      updateWaynameView(instanceState.retrieveWayname());
+    }
+    boolean cameraTracking = instanceState.isCameraTracking();
+    updateCameraTrackingEnabled(cameraTracking);
   }
 
   public void drawRoute(@NonNull DirectionsRoute route) {
@@ -136,7 +167,6 @@ public class NavigationMapboxMap {
     mapWayname.updateWaynameQueryMap(isEnabled);
   }
 
-  @SuppressLint("MissingPermission")
   public void onStart() {
     locationLayer.onStart();
     mapCamera.onStart();
@@ -149,7 +179,6 @@ public class NavigationMapboxMap {
     mapRoute.onStop();
   }
 
-  @SuppressLint("MissingPermission")
   public void updateLocationLayerVisibilityTo(boolean isVisible) {
     locationLayer.setLocationLayerEnabled(isVisible);
   }
